@@ -2,6 +2,8 @@ const sup = require('superscript-number');
 
 function main() {
     const P1 = new Polynomial([6, -1, -7, 1, 1]);
+    const dx = P1.derivative();
+    console.log(dx.print());
     const P2 =  new Polynomial(P1.a.slice().reverse());
     const P3 =  new Polynomial(P1.a.map((c, i) => i % 2 === 0 ? c : -c));
     const P4 =  new Polynomial(P2.a.map((c, i) => i % 2 === 0 ? c : -c));
@@ -9,12 +11,40 @@ function main() {
     const L2 = 1/P2.l;
     const L3 = -P3.l;
     const L4 = -1/P4.l;
-    console.log(`As raízes negativas do polinômio P(x) = ${P1.print()} estão entre`);
-    console.log(`L3 = ${L3.toFixed(2)} e L4=${L4.toFixed(2)}`);
-    console.log(`As raízes positivas do polinômio P(x) = ${P1.print()} estão entre`);
-    console.log(`L2 = ${L2.toFixed(2)} e L1=${L1.toFixed(2)}`);
-    // console.log(P1.calculate(0))
-    console.log("P(x) = 0 -> x =~ " + bisectionMethod((x) => P1.calculate(x), -4, 1.5))
+    // console.log(`As raízes negativas do polinômio P(x) = ${P1.print()} estão entre`);
+    // console.log(`L3 = ${L3.toFixed(2)} e L4=${L4.toFixed(2)}`);
+    // console.log(`As raízes positivas do polinômio P(x) = ${P1.print()} estão entre`);
+    // console.log(`L2 = ${L2.toFixed(2)} e L1=${L1.toFixed(2)}`);
+    console.log("P(x) = 0 -> x =~ " + bisectionMethod((x) => P1.calculate(x), 1.1, 2.1))
+    console.log(
+        "P(x) = 0 -> x =~ " +
+        newtonsMethod(
+            (x) => P1.calculate(x),
+            (x) => dx.calculate(x),
+            20
+        )
+    );
+}
+
+function newtonsMethod(f, fl, x0) {
+    const absoluteError = 10 ** (-8);
+    const k = 100;
+    let x = x0;
+
+    for(let i = 0; i < k; i++) {
+        const y = f(x);
+
+        if(Math.abs(y) <= absoluteError) {
+            console.log(i);
+            return x;
+        }
+
+        const yl = fl(x);
+        if(yl === 0) throw `df/dx equal zero  when x = ${x}`;
+        x -= y/yl;
+    }
+
+    return x;
 }
 
 function bisectionMethod(f, a, b) {
@@ -26,7 +56,8 @@ function bisectionMethod(f, a, b) {
     if(f(a)*f(b) >= 0) throw "There is no root between a and b"
 
     const absoluteError = 10 ** (-8);
-    const k = Math.ceil( Math.log2((b-a)/absoluteError));
+    const k = Math.ceil(Math.log2((b-a)/absoluteError));
+    console.log(k);
 
     let c;
     for(let i = 0; i <= k; i++) {
@@ -60,19 +91,34 @@ class Polynomial {
         return r;
     }
 
+    derivative() {
+        const a = [];
+
+        for(let i = 0; i < this.n-1; i++) {
+            a[i] = this.a[i+1]*(i+1)
+        }
+
+        return new Polynomial(a);
+    }
+
     print() {
         let str = '';
 
         for(let i = 0; i < this.n; i++) {
-            if(Math.abs(this.a[i]) !== 1) {
+            if(i === 0) {
+                str += `${this.a[i]}`;
+            }
+            else if(Math.abs(this.a[i]) !== 1) {
                 str += `${Math.abs(this.a[i])}`;
             }
+
             if(i !== 0) {
                 str += `X`;
                 if(i !== 1) {
                     str += `${sup(i)}`;
                 }
             }
+            
             if(i < this.n -1) {
                 str += this.a[i+1] >= 0 ? ' + ' : ' - ';
             }
